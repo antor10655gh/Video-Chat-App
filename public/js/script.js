@@ -8,6 +8,15 @@ var userVideo = document.getElementById('user-video');
 var peerVideo = document.getElementById('peer-video');
 
 
+// upgrading part
+var divBtnGroup = document.getElementById('btn-group');
+var muteBtn = document.getElementById('muteBtn');
+var hideBtn = document.getElementById('hideBtn');
+
+var muteFlag = false;
+var hideFlag = false;
+
+
 var roomName = roomInput.value;
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
@@ -20,7 +29,7 @@ var userStream;
 var iceServers = {
     iceServers: [
         { urls: "stun:stun.services.mozilla.com" },
-        { urls: "stun:stun.l.google.com:19302" }
+        { urls: "stun:stun1.l.google.com:19302" }
     ]
 }
 
@@ -32,6 +41,34 @@ joinBtn.addEventListener('click', () => {
     }
 })
 
+
+muteBtn.addEventListener('click', () => {
+    muteFlag = !muteFlag;
+    if (muteFlag) {
+        userStream.getTracks()[0].enabled = false;
+        muteBtn.innerText = "U";
+        muteBtn.style = "background-color:red";
+    } else {
+        userStream.getTracks()[0].enabled = true;
+        muteBtn.innerText = "M";
+        muteBtn.style = "background-color:transparent";
+    }
+})
+
+hideBtn.addEventListener('click', () => {
+    hideFlag = !hideFlag;
+    if (hideFlag) {
+        userStream.getTracks()[1].enabled = false;
+        peerVideo.style = "display:none";
+        hideBtn.style = "background-color:red";
+    } else {
+        userStream.getTracks()[1].enabled = true;
+        peerVideo.style = "display:block";
+        hideBtn.style = "background-color:transparent";
+    }
+})
+
+
 socket.on("created", () => {
     creator = true;
     navigator.getUserMedia(
@@ -41,7 +78,8 @@ socket.on("created", () => {
         },
         function (stream) {
             userStream = stream;
-            videoChatForm.style.display = 'none';
+            videoChatForm.style = 'display:none';
+            divBtnGroup.style = 'display:flex';
             userVideo.srcObject = stream;
             userVideo.onloadedmetadata = function (e) {
                 userVideo.play();
@@ -52,6 +90,8 @@ socket.on("created", () => {
         }
     )
 })
+
+
 socket.on("joinedRoom", () => {
     creator = false;
     navigator.getUserMedia(
@@ -61,7 +101,8 @@ socket.on("joinedRoom", () => {
         },
         function (stream) {
             userStream = stream;
-            videoChatForm.style.display = 'none';
+            videoChatForm.style = 'display:none';
+            divBtnGroup.style = 'display:flex';
             userVideo.srcObject = stream;
             userVideo.onloadedmetadata = function (e) {
                 userVideo.play();
@@ -73,9 +114,13 @@ socket.on("joinedRoom", () => {
         }
     )
 })
+
+
 socket.on("fullRoom", () => {
     alert("Room is full");
 })
+
+
 socket.on("ready", () => {
     if (creator) {
         rtcPeerConnection = new RTCPeerConnection(iceServers);
@@ -94,10 +139,14 @@ socket.on("ready", () => {
         )
     }
 })
+
+
 socket.on("candidate", (candidate) => {
     var iceCandidate = new RTCIceCandidate(candidate);
     rtcPeerConnection.addIceCandidate(iceCandidate);
 })
+
+
 socket.on("offer", (offer) => {
     if (!creator) {
         rtcPeerConnection = new RTCPeerConnection(iceServers);
@@ -109,7 +158,7 @@ socket.on("offer", (offer) => {
         rtcPeerConnection.createAnswer(
             function (answer) {
                 rtcPeerConnection.setLocalDescription(answer);
-                socket.emit('offer', answer, roomName);
+                socket.emit('answer', answer, roomName);
             },
             function (err) {
                 console.log("Error:", err);
@@ -117,6 +166,8 @@ socket.on("offer", (offer) => {
         )
     }
 })
+
+
 socket.on("answer", (answer) => {
     rtcPeerConnection.setRemoteDescription(answer);
 })

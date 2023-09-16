@@ -56,12 +56,12 @@ io.on('connection', (socket) => {
 
     socket.on("offer", (offer, roomName) => {
         console.log("Offer");
-        console.log(offer);
         socket.broadcast.to(roomName).emit("offer", offer);
     })
 
     socket.on("answer", (answer, roomName) => {
         console.log("Answer");
+        console.log(answer);
         socket.broadcast.to(roomName).emit("answer", answer);
     })
 
